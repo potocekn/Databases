@@ -10,6 +10,48 @@ namespace Databases
 {
     class Program
     {
+        public static void ReadConfigInfo(ConfigInfo dbInfo, string line)
+        {
+            if (line.Trim().StartsWith("dataSource"))
+            {
+                string[] parts = line.Split('=');
+                dbInfo.DataSource = parts[1].Trim();
+            }
+
+            if (line.Trim().StartsWith("port"))
+            {
+                string[] parts = line.Split('=');
+                int port;
+                bool parsed = Int32.TryParse(parts[1].Trim(), out port);
+                if (parsed)
+                {
+                    dbInfo.Port = port;
+                }
+                else
+                {
+                    throw new WrongPortFormatException();
+                }
+
+            }
+
+            if (line.Trim().StartsWith("userName"))
+            {
+                string[] parts = line.Split('=');
+                dbInfo.UserName = parts[1].Trim();
+            }
+
+            if (line.Trim().StartsWith("password"))
+            {
+                string[] parts = line.Split('=');
+                dbInfo.Password = parts[1].Trim();
+            }
+
+            if (line.Trim().StartsWith("databaseName"))
+            {
+                string[] parts = line.Split('=');
+                dbInfo.DatabaseName = parts[1].Trim();
+            }            
+        }
         public static LocalDBConfigInfo ReadLocalDBConfigFile(string fileName)
         {
             LocalDBConfigInfo dbInfo = new LocalDBConfigInfo();
@@ -20,46 +62,8 @@ namespace Databases
             {
                 String line;
                 while ((line = streamReader.ReadLine()) != null)
-                {
-                    if (line.Trim().StartsWith("dataSource"))
-                    {
-                        string[] parts = line.Split('=');
-                        dbInfo.DataSource = parts[1].Trim();
-                    }
-
-                    if (line.Trim().StartsWith("port"))
-                    {
-                        string[] parts = line.Split('=');
-                        int port;
-                        bool parsed = Int32.TryParse(parts[1].Trim(), out port);
-                        if (parsed)
-                        {
-                            dbInfo.Port = port;
-                        }
-                        else
-                        {
-                            throw new WrongPortFormatException();
-                        }
-                        
-                    }
-
-                    if (line.Trim().StartsWith("userName"))
-                    {
-                        string[] parts = line.Split('=');
-                        dbInfo.UserName = parts[1].Trim();
-                    }
-
-                    if (line.Trim().StartsWith("password"))
-                    {
-                        string[] parts = line.Split('=');
-                        dbInfo.Password = parts[1].Trim();
-                    }
-
-                    if (line.Trim().StartsWith("databaseName"))
-                    {
-                        string[] parts = line.Split('=');
-                        dbInfo.DatabaseName = parts[1].Trim();
-                    }
+                {                   
+                    ReadConfigInfo(dbInfo, line);
 
                     if (line.Trim().StartsWith("tableName"))
                     {
@@ -68,7 +72,6 @@ namespace Databases
                     }
                 }      
             }
-
             return dbInfo;
         }
 
