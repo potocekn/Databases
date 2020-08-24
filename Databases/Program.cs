@@ -75,6 +75,35 @@ namespace Databases
             return dbInfo;
         }
 
+        public static MediawikiDBConfigInfo ReadMediawikiConfigFile(string fileName)
+        {
+            MediawikiDBConfigInfo mwInfo = new MediawikiDBConfigInfo();
+
+            const Int32 BufferSize = 256;
+            using (var fileStream = File.OpenRead(fileName))
+            using (var streamReader = new StreamReader(fileStream, Encoding.UTF8, true, BufferSize))
+            {
+                String line;
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    ReadConfigInfo(mwInfo, line);
+
+                    if (line.Trim().StartsWith("tableName_page"))
+                    {
+                        string[] parts = line.Split('=');
+                        mwInfo.MwPageTable = parts[1].Trim();
+                    }
+
+                    if (line.Trim().StartsWith("tableName_text"))
+                    {
+                        string[] parts = line.Split('=');
+                        mwInfo.MwTextTable = parts[1].Trim();
+                    }
+                }
+            }
+            return mwInfo;
+        }
+
         public static List<LocalDBPage> ReadLocalPages()
         {
             LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
@@ -134,6 +163,7 @@ namespace Databases
                 throw new LocalDatabaseConnectionException(ex.Message);                
             }
         }
+
 
         public static void Update(string[] args)
         {
