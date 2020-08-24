@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,21 +10,62 @@ namespace Databases
 {
     class Program
     {
-        public LocalDBConfigInfo ReadLocalDBConfigFile(string path)
+        public static LocalDBConfigInfo ReadLocalDBConfigFile(string fileName)
         {
-            return null;
+            LocalDBConfigInfo dbInfo = new LocalDBConfigInfo();
+
+            const Int32 BufferSize = 256;
+            using (var fileStream = File.OpenRead(fileName))
+            using (var streamReader = new StreamReader(fileStream, Encoding.UTF8, true, BufferSize))
+            {
+                String line;
+                while ((line = streamReader.ReadLine()) != null)
+                {
+                    if (line.Trim().StartsWith("dataSource"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.DataSource = parts[1].Trim();
+                    }
+
+                    if (line.Trim().StartsWith("port"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.Port = Int32.Parse(parts[1].Trim());
+                    }
+
+                    if (line.Trim().StartsWith("userName"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.UserName = parts[1].Trim();
+                    }
+
+                    if (line.Trim().StartsWith("password"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.Password = parts[1].Trim();
+                    }
+
+                    if (line.Trim().StartsWith("databaseName"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.DatabaseName = parts[1].Trim();
+                    }
+
+                    if (line.Trim().StartsWith("tableName"))
+                    {
+                        string[] parts = line.Split('=');
+                        dbInfo.TableName = parts[1].Trim();
+                    }
+                }      
+            }
+
+            return dbInfo;
         }
 
         public static List<LocalDBPage> ReadLocalPages()
         {
-            LocalDBConfigInfo dbInfo = new LocalDBConfigInfo();
-            dbInfo.DataSource = "127.0.0.1";
-            dbInfo.Port = 3306;
-            dbInfo.UserName = "root";
-            dbInfo.Password = "password";
-            dbInfo.DatabaseName = "local_page_database";
-            dbInfo.TableName = "local_pages";
-
+            LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
+            
             string connectionString = dbInfo.GetConnectionString();
             // Your query,            
             string query = String.Format("SELECT * FROM {0}", dbInfo.TableName);
