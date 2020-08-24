@@ -53,6 +53,7 @@
     <Compile Include="LocalDBPage.cs" />
     <Compile Include="MediawikiDBConfigInfo.cs" />
     <Compile Include="MwPageData.cs" />
+    <Compile Include="MwTextData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WrongPortFormatException.cs" />
