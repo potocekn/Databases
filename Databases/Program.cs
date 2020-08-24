@@ -30,7 +30,17 @@ namespace Databases
                     if (line.Trim().StartsWith("port"))
                     {
                         string[] parts = line.Split('=');
-                        dbInfo.Port = Int32.Parse(parts[1].Trim());
+                        int port;
+                        bool parsed = Int32.TryParse(parts[1].Trim(), out port);
+                        if (parsed)
+                        {
+                            dbInfo.Port = port;
+                        }
+                        else
+                        {
+                            throw new WrongPortFormatException();
+                        }
+                        
                     }
 
                     if (line.Trim().StartsWith("userName"))
@@ -77,7 +87,7 @@ namespace Databases
             MySqlDataReader reader;
 
             List<LocalDBPage> localDb = new List<LocalDBPage>();
-            // Let's do it !
+            
             try
             {
                 // Open the database
@@ -116,11 +126,9 @@ namespace Databases
                 return localDb;
             }
             catch (Exception ex)
-            {
-                // Show any error message.
+            {                
                 Console.WriteLine(ex.Message);
-                throw new LocalDatabaseConnectionException(ex.Message);
-                
+                throw new LocalDatabaseConnectionException(ex.Message);                
             }
         }
 
@@ -143,7 +151,11 @@ namespace Databases
             catch (LocalDatabaseConnectionException e)
             {
                 Console.WriteLine("There were some troubles while trying to connect to local database.");
-                Console.WriteLine("The exception message text: ");
+                Console.WriteLine(e.Message);
+            }
+            catch (WrongPortFormatException e)
+            {
+                Console.WriteLine("There is wrong format of port number in the config file for local database.");
                 Console.WriteLine(e.Message);
             }
             

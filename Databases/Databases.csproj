@@ -52,6 +52,7 @@
     <Compile Include="LocalDBPage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WrongPortFormatException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
