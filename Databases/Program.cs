@@ -77,7 +77,7 @@ namespace Databases
             {
                 // Show any error message.
                 Console.WriteLine(ex.Message);
-                return null;
+                throw new LocalDatabaseConnectionException(ex.Message);
                 
             }
         }
@@ -94,7 +94,17 @@ namespace Databases
         }
         static void Main(string[] args)
         {
-            Update(args);
+            try
+            {
+                Update(args);
+            }
+            catch (LocalDatabaseConnectionException e)
+            {
+                Console.WriteLine("There were some troubles while trying to connect to local database.");
+                Console.WriteLine("The exception message text: ");
+                Console.WriteLine(e.Message);
+            }
+            
         }
     }
 }
