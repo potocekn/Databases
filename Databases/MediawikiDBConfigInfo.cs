@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace Databases
 {
-    class LocalDBConfigInfo : ConfigInfo
-    {       
-        public string TableName { get; set; }        
+    class MediawikiDBConfigInfo : ConfigInfo
+    {
+        public string MwPageTable { get; set; }
+        public string MwTextTable { get; set; }
+
     }
 }

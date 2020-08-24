@@ -47,9 +47,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigInfo.cs" />
     <Compile Include="LocalDatabaseConnectionException.cs" />
     <Compile Include="LocalDBConfigInfo.cs" />
     <Compile Include="LocalDBPage.cs" />
+    <Compile Include="MediawikiDBConfigInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WrongPortFormatException.cs" />
