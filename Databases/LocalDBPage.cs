@@ -11,7 +11,7 @@ namespace Databases
         public int PageId { get; set; }
         public string PageTitle { get; set; }
         public string PageHash { get; set; }
-        public byte[] PageContent { get; set; }
+        public byte[] PageContent { get; set; } 
 
         public LocalDBPage(int id, string title, string hash, byte[] content)
         {
