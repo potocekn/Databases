@@ -270,6 +270,7 @@ namespace Databases
                                                 select new LocalDBPage(x.PageId, x.GetStringTitleName(), HashToString(md5.ComputeHash(y.Text)), y.Text)
                                                 ).ToList();
 
+            /**
             Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             Console.WriteLine("MediaWiki pages: ");
             foreach (LocalDBPage page in mediaWikiPages)
@@ -279,6 +280,7 @@ namespace Databases
                 Console.WriteLine("=======================================================================");
             }
             Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            /**/
 
             return mediaWikiPages;
         }
@@ -333,7 +335,7 @@ namespace Databases
                     return null;
                 }
 
-                /**/
+                /**
                 MD5 md5 = MD5.Create();
                 Console.WriteLine("Local Pages");
                 foreach (LocalDBPage page in localDb)
