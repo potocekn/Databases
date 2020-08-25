@@ -319,6 +319,18 @@ namespace Databases
                 Console.WriteLine("There is wrong format of port number in the config file for local database.");
                 Console.WriteLine(e.Message);
             }
+            catch (MwPageTableConnectionException e)
+            {
+                Console.WriteLine("There were some troubles while reading the mw_page table.");
+                Console.WriteLine("Unable to update pages.");
+                Console.WriteLine(e.Message);
+            }
+            catch (MwTextTableConnectionException e)
+            {
+                Console.WriteLine("There were some troubles while reading the mw_text table.");
+                Console.WriteLine("Unable to update pages.");
+                Console.WriteLine(e.Message);
+            }
             
         }
     }
