@@ -10,5 +10,12 @@ namespace Databases
     {
         public int Id { get; set; }
         public byte[] Text { get; set; }
+
+        public MwTextData() { }
+        public MwTextData(int id, byte[] text)
+        {
+            this.Id = id;
+            this.Text = text;
+        }
     }
 }
