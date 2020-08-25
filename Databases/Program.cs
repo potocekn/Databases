@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace Databases
@@ -167,12 +168,15 @@ namespace Databases
                     return null;
                 }
 
+                /**
                 foreach (MwPageData page in mwPageData)
                 {
                     Console.WriteLine("=======================================================================");
                     Console.WriteLine(String.Format(" Id: {0}\n Title: {1}\n Latest: {2}", page.PageId, page.GetStringTitleName(), page.PageLatest));
                     Console.WriteLine("=======================================================================");        
                 }
+                /**/
+
                 // Finally close the connection
                 databaseConnection.Close();
                 return mwPageData;
@@ -226,12 +230,15 @@ namespace Databases
                     return null;
                 }
 
+                /**
                 foreach (MwTextData page in mwTextData)
                 {
                     Console.WriteLine("=======================================================================");
                     Console.WriteLine(String.Format(" Id: {0}\n Content: {1}", page.Id, ASCIIEncoding.ASCII.GetString(page.Text)));
                     Console.WriteLine("=======================================================================");
                 }
+                /**/
+
                 // Finally close the connection
                 databaseConnection.Close();
                 return mwTextData;
@@ -255,9 +262,36 @@ namespace Databases
             //reading mw_text
             List<MwTextData> mwTextData = ReadMwTextData(connectionString, mwInfo.MwTextTable);
 
-            return null;
+            MD5 md5 = MD5.Create();
+
+            List<LocalDBPage> mediaWikiPages = (from x in mwPageData
+                                                from y in mwTextData
+                                                where x.PageLatest == y.Id
+                                                select new LocalDBPage(x.PageId, x.GetStringTitleName(), HashToString(md5.ComputeHash(y.Text)), y.Text)
+                                                ).ToList();
+
+            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            Console.WriteLine("MediaWiki pages: ");
+            foreach (LocalDBPage page in mediaWikiPages)
+            {
+                Console.WriteLine("=======================================================================");
+                Console.WriteLine(String.Format(" Hash: {0}\n Title: {1}\n Id: {2}\n Content: {3}",page.PageHash, page.PageTitle, page.PageId, ASCIIEncoding.ASCII.GetString(page.PageContent)));
+                Console.WriteLine("=======================================================================");
+            }
+            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+            return mediaWikiPages;
         }
 
+        static string HashToString(byte[] hashBytes)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hashBytes.Length; i++)
+            {
+                sb.Append(hashBytes[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
         public static List<LocalDBPage> ReadLocalPages()
         {
             LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
@@ -299,14 +333,19 @@ namespace Databases
                     return null;
                 }
 
+                /**/
+                MD5 md5 = MD5.Create();
+                Console.WriteLine("Local Pages");
                 foreach (LocalDBPage page in localDb)
                 {
-                    Console.WriteLine(String.Format(" Id: {0}\n Title: {1}\n Hash: {2}", page.PageId, page.PageTitle, page.PageHash));
+                    Console.WriteLine(String.Format(" Id: {0}\n Title: {1}\n Hash: {2}\n CalculatedHash: {3}", page.PageId, page.PageTitle, page.PageHash.ToUpper(),HashToString(md5.ComputeHash(page.PageContent))));
                     Console.WriteLine("=======================================================================");
                     Console.WriteLine(ASCIIEncoding.ASCII.GetChars(page.PageContent));
                     Console.WriteLine("=======================================================================");
 
                 }
+                /**/
+
                 // Finally close the connection
                 databaseConnection.Close();
                 return localDb;
