@@ -8,7 +8,7 @@ namespace Databases
 {
     class MwPageData
     {
-        public string PageId { get; set; }
+        public int PageId { get; set; }
         public string Pagetitle { get; set; }
         public int PageLatest { get; set; }
     }
