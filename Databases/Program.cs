@@ -10,6 +10,14 @@ namespace Databases
 {
     class Program
     {
+        /// <summary>
+        /// This method reads configuration info that is common for all types of configuration files. 
+        /// All common features are in abstract class ConfigInfo.
+        /// This method is called when reading information for local database or for server mediawiki database. 
+        /// Can throw WrongPortFormatException when the port number is in incorrect form (when it's not integer, ...)
+        /// </summary>
+        /// <param name="dbInfo">current config info that we extend based on what we read on the line.</param>
+        /// <param name="line">represents line of document we want to process</param>
         public static void ReadConfigInfo(ConfigInfo dbInfo, string line)
         {
             if (line.Trim().StartsWith("dataSource"))
@@ -52,6 +60,13 @@ namespace Databases
                 dbInfo.DatabaseName = parts[1].Trim();
             }            
         }
+
+        /// <summary>
+        /// This method reads configuration information from given file and puts it into LocalDBConfigInfo instance.
+        /// This method sort of extends method ReadConfigInfo.
+        /// </summary>
+        /// <param name="fileName">represents the file that we would like to parse into LocalDBConfigInfo</param>
+        /// <returns></returns>
         public static LocalDBConfigInfo ReadLocalDBConfigFile(string fileName)
         {
             LocalDBConfigInfo dbInfo = new LocalDBConfigInfo();
@@ -75,6 +90,12 @@ namespace Databases
             return dbInfo;
         }
 
+        /// <summary>
+        /// This method reads configuration information from given file and puts it into MediawikiDBConfigInfo instance.
+        /// This method sort of extends method ReadConfigInfo.
+        /// </summary>
+        /// <param name="fileName">represents the file that we would like to parse into MediawikiDBConfigInfo</param>
+        /// <returns></returns>
         public static MediawikiDBConfigInfo ReadMediawikiConfigFile(string fileName)
         {
             MediawikiDBConfigInfo mwInfo = new MediawikiDBConfigInfo();
@@ -104,9 +125,17 @@ namespace Databases
             return mwInfo;
         }
 
-        static List<MwPageData> ReadMwPageData(string connectionString, string query)
+        /// <summary>
+        /// This merhod connets to the mw_page table on mediawiki server and stores all important information from each row. 
+        /// Data from each row are stored in MwPageData instances.
+        /// </summary>
+        /// <param name="connectionString">is needed in order to connect to the server</param>
+        /// <param name="tableName">name of table that we want to read (mw_page)/param>
+        /// <returns>The list of MwPageData instances for each row of table.</returns>
+        static List<MwPageData> ReadMwPageData(string connectionString, string tableName)
         {
             List<MwPageData> mwPageData = new List<MwPageData>();
+            string query = String.Format("SELECT * FROM {0}", tableName);
 
             // Prepare the connection
             MySqlConnection databaseConnection = new MySqlConnection(connectionString);
@@ -155,9 +184,17 @@ namespace Databases
             }                       
         }
 
-        static List<MwTextData> ReadMwtextData(string connectionString, string query)
+        /// <summary>
+        /// This merhod connets to the mw_text table on mediawiki server and stores all important information from each row. 
+        /// Data from each row are stored in MwTextData instances.
+        /// </summary>
+        /// <param name="connectionString">is needed in order to connect to the server</param>
+        /// <param name="tableName">represents the table we want to read (mw_text)</param>
+        /// <returns>The list of MwTextData instances for each row of table.</returns>
+        static List<MwTextData> ReadMwTextData(string connectionString, string tableName)
         {
             List<MwTextData> mwTextData = new List<MwTextData>();
+            string query = String.Format("SELECT * FROM {0}", tableName);
 
             // Prepare the connection
             MySqlConnection databaseConnection = new MySqlConnection(connectionString);
@@ -213,13 +250,10 @@ namespace Databases
             string connectionString = mwInfo.GetConnectionString();
 
             //reading table mw_pages
-            string queryMwPages = String.Format("SELECT * FROM {0}",mwInfo.MwPageTable);
+            List<MwPageData> mwPageData = ReadMwPageData(connectionString, mwInfo.MwPageTable);            
 
-            List<MwPageData> mwPageData = ReadMwPageData(connectionString, queryMwPages);
-
-            string queryMwText = String.Format("SELECT * FROM {0}", mwInfo.MwTextTable);
-
-            List<MwTextData> mwTextData = ReadMwtextData(connectionString, queryMwText);
+            //reading mw_text
+            List<MwTextData> mwTextData = ReadMwTextData(connectionString, mwInfo.MwTextTable);
 
             return null;
         }
@@ -284,7 +318,10 @@ namespace Databases
             }
         }
 
-
+        /// <summary>
+        /// This is the main method for updating mediawiki server.
+        /// </summary>
+        /// <param name="args"></param>
         public static void Update(string[] args)
         {
             List<LocalDBPage> localDBPages = ReadLocalPages();
