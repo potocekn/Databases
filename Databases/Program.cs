@@ -250,9 +250,8 @@ namespace Databases
             }
         }
 
-        public static List<LocalDBPage> ReadMediawikiPages()
-        {
-            MediawikiDBConfigInfo mwInfo = ReadMediawikiConfigFile("mediawiki.txt");
+        public static List<LocalDBPage> ReadMediawikiPages(MediawikiDBConfigInfo mwInfo)
+        {           
 
             string connectionString = mwInfo.GetConnectionString();
 
@@ -294,9 +293,8 @@ namespace Databases
             }
             return sb.ToString();
         }
-        public static List<LocalDBPage> ReadLocalPages()
-        {
-            LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
+        public static List<LocalDBPage> ReadLocalPages(LocalDBConfigInfo dbInfo)
+        {       
             
             string connectionString = dbInfo.GetConnectionString();
             // Your query,            
@@ -334,20 +332,7 @@ namespace Databases
                     Console.WriteLine("No rows found.");
                     return null;
                 }
-
-                /*/
-                MD5 md5 = MD5.Create();
-                Console.WriteLine("Local Pages");
-                foreach (LocalDBPage page in localDb)
-                {
-                    Console.WriteLine(String.Format(" Id: {0}\n Title: {1}\n Hash: {2}\n CalculatedHash: {3}", page.PageId, page.PageTitle, page.PageHash.ToUpper(),HashToString(md5.ComputeHash(page.PageContent))));
-                    Console.WriteLine("=======================================================================");
-                    Console.WriteLine(ASCIIEncoding.ASCII.GetChars(page.PageContent));
-                    Console.WriteLine("=======================================================================");
-
-                }
-                /**/
-
+             
                 // Finally close the connection
                 databaseConnection.Close();
                 return localDb;
@@ -365,7 +350,8 @@ namespace Databases
         /// <param name="args"></param>
         public static void Update(string[] args)
         {
-            List<LocalDBPage> localDBPages = ReadLocalPages();
+            LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
+            List<LocalDBPage> localDBPages = ReadLocalPages(dbInfo);
             if (localDBPages == null)
             {
                 Console.WriteLine("Local database for pages is null, nothing to update ...");
@@ -373,7 +359,8 @@ namespace Databases
                 return;
             }
 
-            List<LocalDBPage> mwPageDatas = ReadMediawikiPages();
+            MediawikiDBConfigInfo mwInfo = ReadMediawikiConfigFile("mediawiki.txt");
+            List<LocalDBPage> mwPageDatas = ReadMediawikiPages(mwInfo);
             if (mwPageDatas == null)
             {
                 Console.WriteLine("Mw_page database is null, nothing to update ...");
@@ -387,19 +374,19 @@ namespace Databases
                                              select x).ToList();
         }
 
-        public static void UpdatePages(List<LocalDBPage> pages)
+        public static void UpdatePages(List<LocalDBPage> pages, MediawikiDBConfigInfo mwInfo)
         {
 
             foreach (LocalDBPage page in pages)
             {
                 //najprv zavolaj insert do mw_text tabulky
                 //teraz zistit index 
-                int new_latest = FindMaxMwTextId("","");
+                int new_latest = FindMaxMwTextId(mwInfo.GetConnectionString(), mwInfo.MwTextTable, "old_id") + 1;
                 //tu sprav update mw_page
             }
         }
 
-        static int FindMaxMwTextId(string connectionString, string tableName)
+        static int FindMaxMwTextId(string connectionString, string tableName, string column)
         {
             string query = String.Format("SELECT * FROM {0}", tableName);
 
@@ -423,7 +410,7 @@ namespace Databases
                 {
                     while (reader.Read())
                     {
-                        int id = Convert.ToInt32(reader["old_id"]);
+                        int id = Convert.ToInt32(reader[column]);
                         if (id > max)
                         {
                             max = id;
