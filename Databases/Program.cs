@@ -270,7 +270,7 @@ namespace Databases
                                                 select new LocalDBPage(x.PageId, x.GetStringTitleName(), HashToString(md5.ComputeHash(y.Text)), y.Text)
                                                 ).ToList();
 
-            /**
+            /*/
             Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             Console.WriteLine("MediaWiki pages: ");
             foreach (LocalDBPage page in mediaWikiPages)
@@ -335,7 +335,7 @@ namespace Databases
                     return null;
                 }
 
-                /**
+                /*/
                 MD5 md5 = MD5.Create();
                 Console.WriteLine("Local Pages");
                 foreach (LocalDBPage page in localDb)
@@ -379,6 +379,72 @@ namespace Databases
                 Console.WriteLine("Mw_page database is null, nothing to update ...");
                 Console.WriteLine("Ending program ...");
                 return;
+            }
+
+            List<LocalDBPage> needsUpdate = (from x in localDBPages
+                                             from y in mwPageDatas
+                                             where (x.PageId == y.PageId) && (x.PageHash.ToUpper() != y.PageHash.ToUpper())
+                                             select x).ToList();
+        }
+
+        public static void UpdatePages(List<LocalDBPage> pages)
+        {
+
+            foreach (LocalDBPage page in pages)
+            {
+                //najprv zavolaj insert do mw_text tabulky
+                //teraz zistit index 
+                int new_latest = FindMaxMwTextId("","");
+                //tu sprav update mw_page
+            }
+        }
+
+        static int FindMaxMwTextId(string connectionString, string tableName)
+        {
+            string query = String.Format("SELECT * FROM {0}", tableName);
+
+            // Prepare the connection
+            MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+            MySqlCommand commandDatabase = new MySqlCommand(query, databaseConnection);
+            commandDatabase.CommandTimeout = 60;
+            MySqlDataReader reader;
+
+            int max = 0;
+
+            try
+            {
+                // Open the database
+                databaseConnection.Open();
+
+                // Execute the query
+                reader = commandDatabase.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        int id = Convert.ToInt32(reader["old_id"]);
+                        if (id > max)
+                        {
+                            max = id;
+                        }
+                        
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                    return 0;
+                }
+
+                // Finally close the connection
+                databaseConnection.Close();
+                return max;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw new MwPageTableConnectionException(ex.Message);
             }
         }
         static void Main(string[] args)
