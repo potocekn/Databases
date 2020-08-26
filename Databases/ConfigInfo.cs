@@ -16,6 +16,10 @@ namespace Databases
 
         public string GetConnectionString()
         {
+            if (Password == null)
+            {
+                Password = "";
+            }
             return String.Format("datasource={0};port={1};username={2};password={3};database={4};", DataSource, Port, UserName, Password, DatabaseName);
         }
     }
