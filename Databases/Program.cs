@@ -167,16 +167,7 @@ namespace Databases
                     Console.WriteLine("No rows found.");
                     return null;
                 }
-
-                /**
-                foreach (MwPageData page in mwPageData)
-                {
-                    Console.WriteLine("=======================================================================");
-                    Console.WriteLine(String.Format(" Id: {0}\n Title: {1}\n Latest: {2}", page.PageId, page.GetStringTitleName(), page.PageLatest));
-                    Console.WriteLine("=======================================================================");        
-                }
-                /**/
-
+                               
                 // Finally close the connection
                 databaseConnection.Close();
                 return mwPageData;
@@ -229,16 +220,7 @@ namespace Databases
                     Console.WriteLine("No rows found.");
                     return null;
                 }
-
-                /**
-                foreach (MwTextData page in mwTextData)
-                {
-                    Console.WriteLine("=======================================================================");
-                    Console.WriteLine(String.Format(" Id: {0}\n Content: {1}", page.Id, ASCIIEncoding.ASCII.GetString(page.Text)));
-                    Console.WriteLine("=======================================================================");
-                }
-                /**/
-
+                            
                 // Finally close the connection
                 databaseConnection.Close();
                 return mwTextData;
@@ -250,6 +232,13 @@ namespace Databases
             }
         }
 
+        /// <summary>
+        /// This method reads data from mediawiki database.
+        /// First method gets data from mw_page table, then gets data from mw_text. 
+        /// Lastly both obtained information are combined into list of pages.
+        /// </summary>
+        /// <param name="mwInfo"></param>
+        /// <returns>Method returns list of pages from mediawiki database.</returns>
         public static List<LocalDBPage> ReadMediawikiPages(MediawikiDBConfigInfo mwInfo)
         {           
 
@@ -269,21 +258,14 @@ namespace Databases
                                                 select new LocalDBPage(x.PageId, x.GetStringTitleName(), HashToString(md5.ComputeHash(y.Text)), y.Text)
                                                 ).ToList();
 
-            /*/
-            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Console.WriteLine("MediaWiki pages: ");
-            foreach (LocalDBPage page in mediaWikiPages)
-            {
-                Console.WriteLine("=======================================================================");
-                Console.WriteLine(String.Format(" Hash: {0}\n Title: {1}\n Id: {2}\n Content: {3}",page.PageHash, page.PageTitle, page.PageId, ASCIIEncoding.ASCII.GetString(page.PageContent)));
-                Console.WriteLine("=======================================================================");
-            }
-            Console.WriteLine("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            /**/
-
             return mediaWikiPages;
         }
 
+        /// <summary>
+        /// This method converts calculated hash (byte array) into string value.
+        /// </summary>
+        /// <param name="hashBytes">calculated hash</param>
+        /// <returns>Method returns string value of given hash.</returns>
         static string HashToString(byte[] hashBytes)
         {
             StringBuilder sb = new StringBuilder();
@@ -293,6 +275,12 @@ namespace Databases
             }
             return sb.ToString();
         }
+
+        /// <summary>
+        /// This method reads information from local database and stores them as list of LocalDBPages.         
+        /// </summary>
+        /// <param name="dbInfo">Config info for local database.</param>
+        /// <returns>List of read pages.</returns>
         public static List<LocalDBPage> ReadLocalPages(LocalDBConfigInfo dbInfo)
         {       
             
@@ -374,6 +362,11 @@ namespace Databases
                                              select x).ToList();
         }
 
+        /// <summary>
+        /// This method updates all of given pages. This includes inserting new row into mw_text table and updating mw_page table (column page_latest).
+        /// </summary>
+        /// <param name="pages">list of pages that need to be updated.</param>
+        /// <param name="mwInfo">config info for mediawiki database.</param>
         public static void UpdatePages(List<LocalDBPage> pages, MediawikiDBConfigInfo mwInfo)
         {
 
@@ -381,11 +374,18 @@ namespace Databases
             {
                 //najprv zavolaj insert do mw_text tabulky
                 //teraz zistit index 
-                int new_latest = FindMaxMwTextId(mwInfo.GetConnectionString(), mwInfo.MwTextTable, "old_id") + 1;
+                int new_latest = FindMaxMwTextId(mwInfo.GetConnectionString(), mwInfo.MwTextTable, "old_id");
                 //tu sprav update mw_page
             }
         }
 
+        /// <summary>
+        /// Method finds the highest index in the given table based on given column name.
+        /// </summary>
+        /// <param name="connectionString">string needed for connecting to table</param>
+        /// <param name="tableName">the table we want to connect to</param>
+        /// <param name="column">the name of column where ids are stalled</param>
+        /// <returns>Method returns value of highest index in the table.</returns>
         static int FindMaxMwTextId(string connectionString, string tableName, string column)
         {
             string query = String.Format("SELECT * FROM {0}", tableName);
