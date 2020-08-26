@@ -156,6 +156,7 @@ namespace Databases
                 {
                     while (reader.Read())
                     {
+                        //store important data
                         int id = Convert.ToInt32(reader["page_id"]);
                         byte[] title = (byte[])reader["page_title"];
                         int latest = Convert.ToInt32(reader["page_latest"]);
@@ -209,6 +210,7 @@ namespace Databases
                 {
                     while (reader.Read())
                     {
+                        //store important data
                         int id = Convert.ToInt32(reader["old_id"]);
                         byte[] content = (byte[])reader["old_text"];
                         
@@ -241,7 +243,7 @@ namespace Databases
         /// <returns>Method returns list of pages from mediawiki database.</returns>
         public static List<LocalDBPage> ReadMediawikiPages(MediawikiDBConfigInfo mwInfo)
         {           
-
+            //get connection string
             string connectionString = mwInfo.GetConnectionString();
 
             //reading table mw_pages
@@ -250,8 +252,10 @@ namespace Databases
             //reading mw_text
             List<MwTextData> mwTextData = ReadMwTextData(connectionString, mwInfo.MwTextTable);
 
+            //md5 for creating hashes
             MD5 md5 = MD5.Create();
 
+            //creates pages as result of combination of two tables
             List<LocalDBPage> mediaWikiPages = (from x in mwPageData
                                                 from y in mwTextData
                                                 where x.PageLatest == y.Id
@@ -283,9 +287,10 @@ namespace Databases
         /// <returns>List of read pages.</returns>
         public static List<LocalDBPage> ReadLocalPages(LocalDBConfigInfo dbInfo)
         {       
-            
+            //get connection string
             string connectionString = dbInfo.GetConnectionString();
-            // Your query,            
+
+            //query we want to perform            
             string query = String.Format("SELECT * FROM {0}", dbInfo.TableName);
 
             // Prepare the connection
@@ -308,6 +313,7 @@ namespace Databases
                 {
                     while (reader.Read())
                     {                        
+                        //store important data
                         int id = Convert.ToInt32(reader["page_id"]);
                         string title = reader["page_title"].ToString();
                         string hash = reader["page_hash"].ToString();
@@ -338,8 +344,13 @@ namespace Databases
         /// <param name="args"></param>
         public static void Update(string[] args)
         {
+            //read config info for local database
             LocalDBConfigInfo dbInfo = ReadLocalDBConfigFile("local_pages.txt");
+
+            //read page information from local database
             List<LocalDBPage> localDBPages = ReadLocalPages(dbInfo);
+
+            //when read data are null we have nothing to update, hence ending the program
             if (localDBPages == null)
             {
                 Console.WriteLine("Local database for pages is null, nothing to update ...");
@@ -347,8 +358,13 @@ namespace Databases
                 return;
             }
 
+            //read config info for mediawiki database
             MediawikiDBConfigInfo mwInfo = ReadMediawikiConfigFile("mediawiki.txt");
+
+            //read page informaion from mediawiki database
             List<LocalDBPage> mwPageDatas = ReadMediawikiPages(mwInfo);
+
+            //when mediawiki data are null, we have nothing to compare to, hence ending the program
             if (mwPageDatas == null)
             {
                 Console.WriteLine("Mw_page database is null, nothing to update ...");
@@ -356,10 +372,13 @@ namespace Databases
                 return;
             }
 
+            //filtrates pages that need update based on different hashes 
             List<LocalDBPage> needsUpdate = (from x in localDBPages
                                              from y in mwPageDatas
                                              where (x.PageId == y.PageId) && (x.PageHash.ToUpper() != y.PageHash.ToUpper())
                                              select x).ToList();
+            //updates given pages
+            UpdatePages(needsUpdate, mwInfo);
         }
 
         /// <summary>
