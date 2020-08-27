@@ -338,6 +338,56 @@ namespace Databases
             }
         }
 
+        public static int GetUserId(string userName, string connectionString, string tableName)
+        {
+           
+            //query we want to perform            
+            string query = String.Format("SELECT * FROM {0}", tableName);
+
+            // Prepare the connection
+            MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+            MySqlCommand commandDatabase = new MySqlCommand(query, databaseConnection);
+            commandDatabase.CommandTimeout = 60;
+            MySqlDataReader reader;
+
+            try
+            {
+                // Open the database
+                databaseConnection.Open();
+
+                // Execute the query
+                reader = commandDatabase.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        //store important data
+                        int id = Convert.ToInt32(reader["user_id"]);
+                        string name = reader["user_name"].ToString();
+                        if (userName == name)
+                        {
+                            return id;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                    return -1;
+                }
+
+                // Finally close the connection
+                databaseConnection.Close();
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw new MwUserTabeConncectionException(ex.Message);
+            }
+        }
+
         /// <summary>
         /// This is the main method for updating mediawiki server.
         /// </summary>
@@ -351,12 +401,22 @@ namespace Databases
             List<LocalDBPage> localDBPages = ReadLocalPages(dbInfo);
 
             //when read data are null we have nothing to update, hence ending the program
+
             if (localDBPages == null)
             {
                 Console.WriteLine("Local database for pages is null, nothing to update ...");
                 Console.WriteLine("Ending program ...");
                 return;
             }
+
+            Console.WriteLine("Local Pages: ");
+
+            foreach (LocalDBPage page in localDBPages)
+            {
+                Console.WriteLine(String.Format("Title: {0}\nId: {1}\nHash: {2}", page.PageTitle, page.PageId, page.PageHash));
+            }
+            Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            Console.ReadLine();
 
             //read config info for mediawiki database
             MediawikiDBConfigInfo mwInfo = ReadMediawikiConfigFile("mediawiki.txt");
@@ -372,13 +432,68 @@ namespace Databases
                 return;
             }
 
+            Console.WriteLine("Mediawiki Pages: ");
+            foreach (LocalDBPage page in mwPageDatas)
+            {
+                Console.WriteLine(String.Format("Title: {0}\nId: {1}\nHash: {2}", page.PageTitle, page.PageId, page.PageHash));
+            }
+            Console.WriteLine("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            Console.ReadLine();
             //filtrates pages that need update based on different hashes 
             List<LocalDBPage> needsUpdate = (from x in localDBPages
                                              from y in mwPageDatas
-                                             where (x.PageId == y.PageId) && (x.PageHash.ToUpper() != y.PageHash.ToUpper())
+                                             where (x.PageId == y.PageId) && (x.PageHash.ToUpper().Trim() != y.PageHash.ToUpper().Trim())
                                              select x).ToList();
+            foreach (LocalDBPage page in needsUpdate)
+            {
+                Console.WriteLine(String.Format("Title: {0}\nId: {1}\nHash: {2}",page.PageTitle,page.PageId,page.PageHash));
+            }
+            Console.ReadLine();
             //updates given pages
             UpdatePages(needsUpdate, mwInfo);
+        }
+
+        public static void InsertIntoMwRevision(string connectionString, string tableName, int pageId, int oldTextId, int userId,string userName)
+        {
+            MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+            databaseConnection.Open();
+            string query = String.Format("INSERT INTO {0}(rev_page, rev_text_id, rev_user, rev_user_text) VALUES (@rev_page, @rev_text_id, @rev_user, @rev_user_text )", tableName);
+            MySqlCommand cmd = new MySqlCommand(query, databaseConnection);
+            cmd.Parameters.AddWithValue("@rev_page", pageId);
+            cmd.Parameters.AddWithValue("@rev_text_id", oldTextId);
+            cmd.Parameters.AddWithValue("@rev_user", userId);
+            cmd.Parameters.AddWithValue("@rev_user_text", userName);
+
+            cmd.ExecuteNonQuery();
+            databaseConnection.Close();
+        }
+
+        public static void InsertIntoMwText(LocalDBPage page, string connectionString, string tableName)
+        {
+            // Prepare the connection
+            MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+            databaseConnection.Open();
+            //query we want to perform            
+            string query = String.Format("INSERT INTO {0}(old_text, old_flags) VALUES (@old_text, @old_flags)",tableName);
+            MySqlCommand cmd = new MySqlCommand(query, databaseConnection);
+            cmd.Parameters.AddWithValue("@old_text",page.PageContent);         
+            cmd.Parameters.AddWithValue("@old_flags", Encoding.ASCII.GetBytes("utf-8"));
+                      
+            cmd.ExecuteNonQuery();
+            databaseConnection.Close();
+        }
+
+        public static void UpdateMwPage(string title, int new_latest, string connectionString, string tableName)
+        {
+            // Prepare the connection
+            MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+
+            //query we want to perform            
+            string query = String.Format("UPDATE {0} SET page_latest = {1} WHERE page_title = '{2}'", tableName, new_latest, title);
+            MySqlCommand cmd = new MySqlCommand(query, databaseConnection);
+            databaseConnection.Open();
+            cmd.ExecuteNonQuery();
+            databaseConnection.Close();
         }
 
         /// <summary>
@@ -388,13 +503,17 @@ namespace Databases
         /// <param name="mwInfo">config info for mediawiki database.</param>
         public static void UpdatePages(List<LocalDBPage> pages, MediawikiDBConfigInfo mwInfo)
         {
-
             foreach (LocalDBPage page in pages)
             {
                 //najprv zavolaj insert do mw_text tabulky
+                InsertIntoMwText(page, mwInfo.GetConnectionString(), mwInfo.MwTextTable);
                 //teraz zistit index 
                 int new_latest = FindMaxMwTextId(mwInfo.GetConnectionString(), mwInfo.MwTextTable, "old_id");
                 //tu sprav update mw_page
+                UpdateMwPage(page.PageTitle, new_latest, mwInfo.GetConnectionString(), mwInfo.MwPageTable);
+                int userId = GetUserId(mwInfo.UserName.Trim(), mwInfo.GetConnectionString(), "mw_user");
+                InsertIntoMwRevision(mwInfo.GetConnectionString(), "mw_revision", page.PageId, new_latest, userId, mwInfo.UserName);
+                Console.WriteLine("Updated page "+page.PageTitle);
             }
         }
 
@@ -458,6 +577,7 @@ namespace Databases
             try
             {
                 Update(args);
+                Console.WriteLine("Finished!");
             }
             catch (LocalDatabaseConnectionException e)
             {
@@ -481,7 +601,12 @@ namespace Databases
                 Console.WriteLine("Unable to update pages.");
                 Console.WriteLine(e.Message);
             }
-            
+            catch (MwUserTabeConncectionException e)
+            {
+                Console.WriteLine("There were some troubles while reading the mw_user table.");
+                Console.WriteLine("Unable to update pages.");
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

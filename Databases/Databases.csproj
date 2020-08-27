@@ -56,6 +56,7 @@
     <Compile Include="MwPageTableConnectionException.cs" />
     <Compile Include="MwTextData.cs" />
     <Compile Include="MwTextTableConnectionException.cs" />
+    <Compile Include="MwUserTabeConncectionException.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WrongPortFormatException.cs" />
