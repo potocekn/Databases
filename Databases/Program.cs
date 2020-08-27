@@ -505,13 +505,18 @@ namespace Databases
         {
             foreach (LocalDBPage page in pages)
             {
+                int userId = GetUserId(mwInfo.UserName.Trim(), mwInfo.GetConnectionString(), "mw_user");
+                if (userId == -1)
+                {
+                    throw new InvalidMwUserNameException();
+                }
                 //najprv zavolaj insert do mw_text tabulky
                 InsertIntoMwText(page, mwInfo.GetConnectionString(), mwInfo.MwTextTable);
                 //teraz zistit index 
                 int new_latest = FindMaxMwTextId(mwInfo.GetConnectionString(), mwInfo.MwTextTable, "old_id");
                 //tu sprav update mw_page
                 UpdateMwPage(page.PageTitle, new_latest, mwInfo.GetConnectionString(), mwInfo.MwPageTable);
-                int userId = GetUserId(mwInfo.UserName.Trim(), mwInfo.GetConnectionString(), "mw_user");
+                
                 InsertIntoMwRevision(mwInfo.GetConnectionString(), "mw_revision", page.PageId, new_latest, userId, mwInfo.UserName);
                 Console.WriteLine("Updated page "+page.PageTitle);
             }
@@ -604,6 +609,12 @@ namespace Databases
             catch (MwUserTabeConncectionException e)
             {
                 Console.WriteLine("There were some troubles while reading the mw_user table.");
+                Console.WriteLine("Unable to update pages.");
+                Console.WriteLine(e.Message);
+            }
+            catch (InvalidMwUserNameException e)
+            {
+                Console.WriteLine("User name in mediawiki config file is incorrect (cannot find their id in mw_user table).");
                 Console.WriteLine("Unable to update pages.");
                 Console.WriteLine(e.Message);
             }

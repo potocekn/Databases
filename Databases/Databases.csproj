@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigInfo.cs" />
+    <Compile Include="InvalidMwUserNameException.cs" />
     <Compile Include="LocalDatabaseConnectionException.cs" />
     <Compile Include="LocalDBConfigInfo.cs" />
     <Compile Include="LocalDBPage.cs" />
