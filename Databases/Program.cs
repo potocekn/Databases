@@ -442,8 +442,8 @@ namespace Databases
             //filtrates pages that need update based on different hashes 
             List<LocalDBPage> needsUpdate = (from x in localDBPages
                                              from y in mwPageDatas
-                                             where (x.PageId == y.PageId) && (x.PageHash.ToUpper().Trim() != y.PageHash.ToUpper().Trim())
-                                             select x).ToList();
+                                             where (x.PageTitle.Trim() == y.PageTitle.Trim()) && (x.PageHash.ToUpper().Trim() != y.PageHash.ToUpper().Trim())
+                                             select new LocalDBPage(y.PageId,y.PageTitle, x.PageHash, x.PageContent)).ToList();
             foreach (LocalDBPage page in needsUpdate)
             {
                 Console.WriteLine(String.Format("Title: {0}\nId: {1}\nHash: {2}",page.PageTitle,page.PageId,page.PageHash));
