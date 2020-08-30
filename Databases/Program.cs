@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Databases
 {
@@ -450,7 +453,48 @@ namespace Databases
             }
             Console.ReadLine();
             //updates given pages
-            UpdatePages(needsUpdate, mwInfo);
+            //UpdatePages(needsUpdate, mwInfo);
+            string url = "http://localhost/mediawiki/api.php";
+            string params_0 = "?action=query&meta=tokens&type=login&format=json";
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url+params_0);
+            request.CookieContainer = new CookieContainer();
+            var response = (HttpWebResponse)request.GetResponse();
+            Console.WriteLine(response.StatusDescription);
+            string responseText = "";
+            using (Stream dataStream = response.GetResponseStream())
+            {
+                /* // Open the stream using a StreamReader for easy access.
+                 StreamReader reader = new StreamReader(dataStream);
+                 // Read the content.
+                 string responseFromServer = reader.ReadToEnd();
+                 // Display the content.
+                 Console.WriteLine(responseFromServer); */
+                StreamReader reader = new StreamReader(dataStream);
+                
+                while (reader.Peek() >= 0)
+                {
+                    string responseFromServer = reader.ReadLine();
+                    responseText = responseFromServer;
+                    Console.WriteLine(responseFromServer);
+                    Console.WriteLine("===============================================================================================================");
+                }
+            }
+
+            LoginResponse loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseText);
+            Console.WriteLine("Test cw:");
+            Console.WriteLine(loginResponse.query.tokens.logintoken);
+            // Close the response.
+            response.Close();
+
+            string params_1 = String.Format("?action=login&lgname=User&lgpassword=UserPassword123&lgtoken={0}&format=json", loginResponse.query.tokens.logintoken);
+            HttpWebRequest request2 = (HttpWebRequest)WebRequest.Create(url + params_1);
+            request.CookieContainer = new CookieContainer();
+            request.Method = "POST";
+
+            var response2 = (HttpWebResponse)request.GetResponse();
+            Console.WriteLine(response2.StatusCode);
+            
         }
 
         public static void InsertIntoMwRevision(string connectionString, string tableName, int pageId, int oldTextId, int userId,string userName)
