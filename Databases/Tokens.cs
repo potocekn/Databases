@@ -9,5 +9,6 @@ namespace Databases
     public class Tokens
     {
         public string logintoken { get; set; }
+        public string csrftoken { get; set; }
     }
 }

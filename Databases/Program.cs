@@ -464,12 +464,6 @@ namespace Databases
             string responseText = "";
             using (Stream dataStream = response.GetResponseStream())
             {
-                /* // Open the stream using a StreamReader for easy access.
-                 StreamReader reader = new StreamReader(dataStream);
-                 // Read the content.
-                 string responseFromServer = reader.ReadToEnd();
-                 // Display the content.
-                 Console.WriteLine(responseFromServer); */
                 StreamReader reader = new StreamReader(dataStream);
                 
                 while (reader.Peek() >= 0)
@@ -487,14 +481,65 @@ namespace Databases
             // Close the response.
             response.Close();
 
+            /////////////////////////////////////////////////////////////////////////////////////////////////
+            
             string params_1 = String.Format("?action=login&lgname=User&lgpassword=UserPassword123&lgtoken={0}&format=json", loginResponse.query.tokens.logintoken);
             HttpWebRequest request2 = (HttpWebRequest)WebRequest.Create(url + params_1);
-            request.CookieContainer = new CookieContainer();
-            request.Method = "POST";
+            request2.CookieContainer = new CookieContainer();
+            request2.Method = "POST";
 
             var response2 = (HttpWebResponse)request.GetResponse();
             Console.WriteLine(response2.StatusCode);
+
+            /////////////////////////////////////////////////////////////////////////////////////////////
             
+            string params_2 = "?action=query&meta=tokens&format=json&prop=info|revisions";
+            HttpWebRequest request3 = (HttpWebRequest)WebRequest.Create(url + params_2);
+            request3.CookieContainer = new CookieContainer();
+
+            var response3 = (HttpWebResponse)request3.GetResponse();
+            Console.WriteLine(response3.StatusDescription);
+            string responseText3 = "";
+            using (Stream dataStream = response3.GetResponseStream())
+            {
+                StreamReader reader = new StreamReader(dataStream);
+
+                while (reader.Peek() >= 0)
+                {
+                    string responseFromServer = reader.ReadLine();
+                    responseText3 = responseFromServer;
+                    Console.WriteLine(responseFromServer);
+                    Console.WriteLine("===============================================================================================================");
+                }
+            }
+
+            LoginResponse loginResponse3 = JsonSerializer.Deserialize<LoginResponse>(responseText3);
+            Console.WriteLine("CSRFTOKEN: ");
+            Console.WriteLine(loginResponse3.query.tokens.csrftoken);
+
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            string params_3 = String.Format("?action=edit&title={0}&token={1}&format=json&appendtext=Hello","Slovak", loginResponse3.query.tokens.csrftoken);
+            Console.WriteLine(params_3);
+            HttpWebRequest request4 = (HttpWebRequest)WebRequest.Create(url + params_3);
+            request4.CookieContainer = new CookieContainer();
+            request4.Method = "POST";
+
+            var response4 = (HttpWebResponse)request4.GetResponse();
+            Console.WriteLine(response4.StatusCode);
+            using (Stream dataStream = response4.GetResponseStream())
+            {
+                StreamReader reader = new StreamReader(dataStream);
+
+                while (reader.Peek() >= 0)
+                {
+                    string responseFromServer = reader.ReadLine();
+                    //responseText4 = responseFromServer;
+                    Console.WriteLine(responseFromServer);
+                    Console.WriteLine("===============================================================================================================");
+                }
+            }
+
         }
 
         public static void InsertIntoMwRevision(string connectionString, string tableName, int pageId, int oldTextId, int userId,string userName)
