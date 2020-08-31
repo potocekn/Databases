@@ -521,9 +521,19 @@ namespace Databases
 
             string params_3 = String.Format("?action=edit&title={0}&token={1}&format=json&appendtext=Hello","Slovak", loginResponse3.query.tokens.csrftoken);
             Console.WriteLine(params_3);
-            HttpWebRequest request4 = (HttpWebRequest)WebRequest.Create(url + params_3);
+            HttpWebRequest request4 = (HttpWebRequest)WebRequest.Create(url);
             request4.CookieContainer = new CookieContainer();
+            request4.ContentType = "application/json; charset=utf-8";
             request4.Method = "POST";
+
+            using (var streamWriter = new StreamWriter(request4.GetRequestStream()))
+            {
+                string json = "{\"action\":\"edit\", \"title\": \"Slovak\", \"format\": \"json\", \"appendtext\": \"Hello\", \"token\":" + loginResponse3.query.tokens.csrftoken+"}";
+                Console.WriteLine("JSON:");
+                Console.WriteLine(json);
+                streamWriter.Write(json);
+                streamWriter.Flush();
+            }
 
             var response4 = (HttpWebResponse)request4.GetResponse();
             Console.WriteLine(response4.StatusCode);
