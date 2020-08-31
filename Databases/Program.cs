@@ -452,8 +452,8 @@ namespace Databases
                 Console.WriteLine(String.Format("Title: {0}\nId: {1}\nHash: {2}",page.PageTitle,page.PageId,page.PageHash));
             }
             Console.ReadLine();
-            //updates given pages
-            //UpdatePages(needsUpdate, mwInfo);
+      
+            ///////////////////////////////////////////////////////////////////////////////////////////
             string url = "http://localhost/mediawiki/api.php";
             string params_0 = "?action=query&meta=tokens&type=login&format=json";
 
